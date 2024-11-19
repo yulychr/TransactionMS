@@ -1,127 +1,189 @@
 openapi: 3.0.3
 info:
-  title: Customer Microservice
+  title: Accounts Microservice
   description: |-
-    Microservice to record and manage your customers banking transaction history
+    Microservices to record and manage your customers' banking transaction history. Transactions include deposits, withdrawals and transfers between accounts and transaction history
   version: 1.0.0
 servers:
   - url: https://localhost:8086
 tags:
-  - name: transactions
-    description: transactions
+  - name: transaction
+    description: Transaction management
 
 paths:
-  "/transacciones/depositar/{accountNumber}/":
+  /transacciones/deposito/{accountNumber}/:
     post:
-      tags:
-        - transactions
-      summary: Deposit
-      description: deposit
+      summary: Register a deposit to an account
+      description: Registers a deposit to a specific account identified by the account number.
       operationId: registerDeposit
       parameters:
-        - name: amount
+        - name: accountNumber
           in: path
           required: true
           schema:
-            type: String
-      requestBody:
-        description: Register a deposit
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Transation"
-        required: true
-      responses:
-        "201":
-          description: Register deposited successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Transation"
-  "/transacciones/retirar/{accountNumber}/":
-    post:
-      tags:
-        - transactions
-      summary: retiro
-      description: deposit
-      operationId: registerDeposit
-      parameters:
+            type: string
+          description: The account number where the deposit will be made.
         - name: amount
-          in: path
+          in: query
           required: true
           schema:
-            type: String
-      requestBody:
-        description: Register a deposit
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Transation"
-        required: true
+            type: number
+            format: double
+          description: The amount of money to deposit.
       responses:
-        "201":
-          description: Register deposited successfully
+        "200":
+          description: Deposit successfully registered
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Transation"
-  "/transacciones/transferir":
-    post:
-      tags:
-        - transactions
-      summary: tranferencias
-      description: deposit
-      operationId: registerDeposit
-      parameters:
-        - name: amount
-          in: path
-          required: true
-          schema:
-            type: String
-      requestBody:
-        description: Register a deposit
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Transation"
-        required: true
-      responses:
-        "201":
-          description: Register deposited successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Transation"
+                $ref: "#/components/schemas/Transaction"
+        '404':
+          description: Account not found.
 
+  /transacciones/retiro/{accountNumber}/:
+    post:
+      summary: Register a withdrawal from an account
+      description: Registers a withdrawal from a specific account identified by the account number. number.
+      operationId: registerWithdrawal
+      parameters:
+        - name: accountNumber
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The account number from which the withdrawal will be made.
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: The amount of money to withdraw.
+      responses:
+        "200":
+          description: Withdrawal successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        '404':
+          description: Account not found.
+        '422':
+          description: withdrawal amount exceeds available balance.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelApiResponse"
+
+  /transacciones/transferencia/:
+    post:
+      summary: Register a money transfer between two accounts
+      description: Registers a money transfer from a source account to a destination account.
+      operationId: registerTransfer
+      parameters:
+        - name: sourceAccount
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The source account number from which the transfer will be made.
+        - name: destinationAccount
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The destination account number where the transfer will be received.
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: The amount of money to transfer.
+      responses:
+        "200":
+          description: Withdrawal successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        '400':
+          description: Invalid request or data error.
+          content:
+            application/json:
+              examples:
+                invalidRequest:
+                  value:
+                    error: "Invalid transfer amount"
+                    message: "The transfer amount must be greater than zero."
+        '404':
+          description: One or both accounts not found.
+          content:
+            application/json:
+              examples:
+                sourceAccountNotFound:
+                  value:
+                    error: "Source account not found"
+                    message: "The source account number does not exist."
+                destinationAccountNotFound:
+                  value:
+                    error: "Destination account not found"
+                    message: "The destination account number does not exist."
+        '422':
+          description: Unprocessable Entity (e.g., transfer amount exceeds available balance).
+          content:
+            application/json:
+              examples:
+                insufficientFunds:
+                  value:
+                    error: "Insufficient funds"
+                    message: "The source account does not have enough balance to complete the transfer."
+
+  /transacciones/historial:
+    get:
+      summary: Retrieve transaction history
+      description: This endpoint returns the list of all transactions in the system.
+      operationId: getTransactionHistory
+      responses:
+        '200':
+          description: A list of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelApiResponse'
 components:
   schemas:
     Transaction:
-      required:
-        - type
-        - amount
-        - sourceAccount
       type: object
       properties:
         id:
-          type: String
-          description: Unique identifier for an customer.
-          readOnly: true
-        type:
-          type: String
-          example: deposito
-        date:
-          type: date
-          description: date.
-          readOnly: true
-        amount:
-          type: double
-          example: 100.00
-        sourceAccount:
           type: string
-          example: "157896"
+          description: The unique ID of the transaction.
+        type:
+          type: string
+          description: The type of transaction (e.g., deposit, withdrawal, transfer)
+        amount:
+          type: number
+          format: double
+          description: The amount deposited.
+        date:
+          type: string
+          format: date-time
+          description: The date and time when the transaction was made.
+        soureAccount:
+          type: string
+          description: The source account number associated with the transaction.
         destinationAccount:
           type: string
-          example: "124589"
+          description: The destination account number involved in the transaction (e.g., for transfers).
       xml:
         name: order
     ModelApiResponse:
@@ -136,3 +198,4 @@ components:
           type: string
       xml:
         name: "##default"
+
