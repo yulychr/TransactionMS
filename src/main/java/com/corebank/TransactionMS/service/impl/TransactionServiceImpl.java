@@ -6,7 +6,6 @@ import com.corebank.TransactionMS.repository.AccountRepository;
 import com.corebank.TransactionMS.repository.TransactionRepository;
 import com.corebank.TransactionMS.service.TransactionService;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
@@ -36,7 +35,11 @@ public class TransactionServiceImpl implements TransactionService {
                     account.setBalance(account.getBalance() + amount);
                     return accountRepository.save(account)
                             .flatMap(savedAccount -> createTransaction("deposito", amount, savedAccount, null));
-                });
+                })
+                .switchIfEmpty(Mono.defer(() -> {
+                    System.out.println("Anuncio: La cuenta con número " + accountNumber + " no fue encontrada.");
+                    return Mono.empty();
+                }));
     }
 
     @Override
@@ -48,9 +51,11 @@ public class TransactionServiceImpl implements TransactionService {
                         return accountRepository.save(account)
                                 .flatMap(savedAccount -> createTransaction("retiro", amount, savedAccount, null));
                     } else {
+                        // Error de saldo insuficiente
                         return Mono.error(new IllegalArgumentException("Saldo insuficiente"));
                     }
-                });
+                })
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Cuenta no encontrada")));
     }
 
     @Override
