@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: Customer Microservice
+  description: |-
+    Microservice to record and manage your customers banking transaction history
+  version: 1.0.0
+servers:
+  - url: https://localhost:8086
+tags:
+  - name: transactions
+    description: transactions
+
+paths:
+  "/transacciones/depositar/{accountNumber}/":
+    post:
+      tags:
+        - transactions
+      summary: Deposit
+      description: deposit
+      operationId: registerDeposit
+      parameters:
+        - name: amount
+          in: path
+          required: true
+          schema:
+            type: String
+      requestBody:
+        description: Register a deposit
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Transation"
+        required: true
+      responses:
+        "201":
+          description: Register deposited successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transation"
+  "/transacciones/retirar/{accountNumber}/":
+    post:
+      tags:
+        - transactions
+      summary: retiro
+      description: deposit
+      operationId: registerDeposit
+      parameters:
+        - name: amount
+          in: path
+          required: true
+          schema:
+            type: String
+      requestBody:
+        description: Register a deposit
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Transation"
+        required: true
+      responses:
+        "201":
+          description: Register deposited successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transation"
+  "/transacciones/transferir":
+    post:
+      tags:
+        - transactions
+      summary: tranferencias
+      description: deposit
+      operationId: registerDeposit
+      parameters:
+        - name: amount
+          in: path
+          required: true
+          schema:
+            type: String
+      requestBody:
+        description: Register a deposit
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Transation"
+        required: true
+      responses:
+        "201":
+          description: Register deposited successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transation"
+
+components:
+  schemas:
+    Transaction:
+      required:
+        - type
+        - amount
+        - sourceAccount
+      type: object
+      properties:
+        id:
+          type: String
+          description: Unique identifier for an customer.
+          readOnly: true
+        type:
+          type: String
+          example: deposito
+        date:
+          type: date
+          description: date.
+          readOnly: true
+        amount:
+          type: double
+          example: 100.00
+        sourceAccount:
+          type: string
+          example: "157896"
+        destinationAccount:
+          type: string
+          example: "124589"
+      xml:
+        name: order
+    ModelApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
+      xml:
+        name: "##default"
