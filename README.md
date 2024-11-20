@@ -10,7 +10,7 @@ Microservices to record and manage your customers' banking transaction history. 
   
 ## Technologies used
 
-Java, Spring Webflux, JPA , Lombok, y Mongodb
+Java, Spring Webflux, JPA , Lombok, y Mongodb Atlas
 
 ## DIAGRAM
 
