@@ -1,5 +1,8 @@
 package com.corebank.TransactionMS.service.impl;
 
+import com.corebank.TransactionMS.exception.AccountNotFoundException;
+import com.corebank.TransactionMS.exception.InsufficientFundsException;
+import com.corebank.TransactionMS.exception.InvalidTransferAmountException;
 import com.corebank.TransactionMS.model.Account;
 import com.corebank.TransactionMS.model.Transaction;
 import com.corebank.TransactionMS.repository.AccountRepository;
@@ -28,22 +31,32 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository.findAll();
     }
 
+    //Metodo para registrar el deposito
     @Override
     public Mono<Transaction> registerDeposit(String accountNumber, double amount) {
+        if (amount <= 0) {
+            return Mono.error(new InvalidTransferAmountException("Invalid deposit amount. Amount must be positive."));
+        }
         return accountRepository.findByAccountNumber(accountNumber)
                 .flatMap(account -> {
                     account.setBalance(account.getBalance() + amount);
                     return accountRepository.save(account)
-                            .flatMap(savedAccount -> createTransaction("deposito", amount, savedAccount, null));
+                            .flatMap(savedAccount ->
+                                    createTransaction("deposito", amount, savedAccount, null)
+                            );
                 })
                 .switchIfEmpty(Mono.defer(() -> {
-                    System.out.println("Anuncio: La cuenta con número " + accountNumber + " no fue encontrada.");
-                    return Mono.empty();
+                    return Mono.error(new AccountNotFoundException("Account with number " + accountNumber + " not found."));
                 }));
     }
 
+    //Metodo para reistrar el retiro
     @Override
     public Mono<Transaction> registerWithdrawal(String accountNumber, double amount) {
+        if (amount <= 0) {
+            return Mono.error(new InvalidTransferAmountException("Invalid withdrawal amount. Amount must be positive"));
+        }
+
         return accountRepository.findByAccountNumber(accountNumber)
                 .flatMap(account -> {
                     if (account.getBalance() >= amount) {
@@ -51,17 +64,22 @@ public class TransactionServiceImpl implements TransactionService {
                         return accountRepository.save(account)
                                 .flatMap(savedAccount -> createTransaction("retiro", amount, savedAccount, null));
                     } else {
-                        // Error de saldo insuficiente
-                        return Mono.error(new IllegalArgumentException("Saldo insuficiente"));
+                        return Mono.error(new InsufficientFundsException("Withdrawal amount exceeds available balance."));
                     }
                 })
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Cuenta no encontrada")));
+                .switchIfEmpty(Mono.error(new AccountNotFoundException("Account with number " + accountNumber + " not found.")));
     }
 
     @Override
     public Mono<Transaction> registerTransfer(String sourceAccount, String destinationAccount, double amount) {
+        if (amount <= 0) {
+            return Mono.error(new InvalidTransferAmountException("Invalid transfer amount. Amount must be positive.")); // Lanzamos una excepción si el monto es inválido
+        }
+
         return accountRepository.findByAccountNumber(sourceAccount)
+                .switchIfEmpty(Mono.error(new AccountNotFoundException("Source account not found."))) // Si no se encuentra la cuenta fuente
                 .flatMap(accountSource -> accountRepository.findByAccountNumber(destinationAccount)
+                        .switchIfEmpty(Mono.error(new AccountNotFoundException("Destination account not found."))) // Si no se encuentra la cuenta destino
                         .flatMap(accountDestination -> {
                             if (accountSource.getBalance() >= amount) {
                                 accountSource.setBalance(accountSource.getBalance() - amount);
@@ -70,10 +88,9 @@ public class TransactionServiceImpl implements TransactionService {
                                         .then(accountRepository.save(accountDestination))
                                         .flatMap(savedAccountSource -> createTransaction("transferencia", amount, savedAccountSource, accountDestination));
                             } else {
-                                return Mono.error(new IllegalArgumentException("Saldo insuficiente en la cuenta de origen"));
+                                return Mono.error(new InsufficientFundsException("The source account does not have enough balance to complete the transfer.")); // Fondos insuficientes
                             }
                         }));
-
     }
 
     private Mono<Transaction> createTransaction(String type, double amount, Account sourceAccount, Account destinationAccount) {
