@@ -8,14 +8,11 @@ import com.corebank.TransactionMS.model.Transaction;
 import com.corebank.TransactionMS.repository.AccountRepository;
 import com.corebank.TransactionMS.repository.TransactionRepository;
 import com.corebank.TransactionMS.service.TransactionService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 
 @Service
 public class TransactionServiceImpl implements TransactionService {
@@ -26,6 +23,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Autowired
     private AccountRepository accountRepository;
 
+    //Metodo para listar las transacciones
     @Override
     public Flux<Transaction>listTransactions(){
         return transactionRepository.findAll();
@@ -69,17 +67,16 @@ public class TransactionServiceImpl implements TransactionService {
                 })
                 .switchIfEmpty(Mono.error(new AccountNotFoundException("Account with number " + accountNumber + " not found.")));
     }
-
+    //Metodo para hacer una tranferencia
     @Override
     public Mono<Transaction> registerTransfer(String sourceAccount, String destinationAccount, double amount) {
         if (amount <= 0) {
-            return Mono.error(new InvalidTransferAmountException("Invalid transfer amount. Amount must be positive.")); // Lanzamos una excepción si el monto es inválido
+            return Mono.error(new InvalidTransferAmountException("Invalid transfer amount. Amount must be positive."));
         }
-
         return accountRepository.findByAccountNumber(sourceAccount)
-                .switchIfEmpty(Mono.error(new AccountNotFoundException("Source account not found."))) // Si no se encuentra la cuenta fuente
+                .switchIfEmpty(Mono.error(new AccountNotFoundException("Source account not found.")))
                 .flatMap(accountSource -> accountRepository.findByAccountNumber(destinationAccount)
-                        .switchIfEmpty(Mono.error(new AccountNotFoundException("Destination account not found."))) // Si no se encuentra la cuenta destino
+                        .switchIfEmpty(Mono.error(new AccountNotFoundException("Destination account not found.")))
                         .flatMap(accountDestination -> {
                             if (accountSource.getBalance() >= amount) {
                                 accountSource.setBalance(accountSource.getBalance() - amount);
@@ -88,11 +85,12 @@ public class TransactionServiceImpl implements TransactionService {
                                         .then(accountRepository.save(accountDestination))
                                         .flatMap(savedAccountSource -> createTransaction("transferencia", amount, savedAccountSource, accountDestination));
                             } else {
-                                return Mono.error(new InsufficientFundsException("The source account does not have enough balance to complete the transfer.")); // Fondos insuficientes
+                                return Mono.error(new InsufficientFundsException("The source account does not have enough balance to complete the transfer.")); 
                             }
                         }));
     }
 
+    //Metodo para crear la transaccion
     private Mono<Transaction> createTransaction(String type, double amount, Account sourceAccount, Account destinationAccount) {
         Transaction transaction = new Transaction();
         transaction.setDate(LocalDateTime.now());

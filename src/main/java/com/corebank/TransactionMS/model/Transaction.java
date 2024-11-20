@@ -1,6 +1,5 @@
 package com.corebank.TransactionMS.model;
 
-import lombok.Builder;
 import lombok.Data;
 import org.bson.codecs.pojo.annotations.BsonId;
 import org.springframework.data.mongodb.core.mapping.Document;

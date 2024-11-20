@@ -8,8 +8,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document (collection = "account")
 public class Account {
     @BsonId
-    private String id;             // ID de la cuenta, este es el identificador de la base de datos
-    private String accountNumber;   // Número de cuenta (clave de búsqueda)
+    private String id;
+    private String accountNumber;
     private double balance;
     private String typeAccount;
     private String customerId;

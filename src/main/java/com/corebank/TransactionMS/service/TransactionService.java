@@ -1,6 +1,5 @@
 package com.corebank.TransactionMS.service;
 
-import com.corebank.TransactionMS.model.Account;
 import com.corebank.TransactionMS.model.Transaction;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
