@@ -38,7 +38,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/Transaction"
         '404':
-          description: Account not found.
+          description: Account with number "accountNumber" not found.
+        "400":
+          description: "Bad request due to invalid data."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelApiResponse"
+              examples:
+                invalidAmount:
+                  summary: Invalid deposit amount
+                  value:
+                    code: "400"
+                    message: "Invalid deposit amount. Amount must be positive."
+                    details:
+                      field: "amount"
+                      issue: "invalid_amount"
 
   /transacciones/retiro/{accountNumber}/:
     post:
@@ -67,9 +82,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/Transaction"
         '404':
-          description: Account not found.
+          description: Account with number " accountNumber " not found..
+        "400":
+          description: "Bad request due to invalid data."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelApiResponse"
+              examples:
+                invalidAmount:
+                  summary: Invalid deposit amount
+                  value:
+                    code: "400"
+                    message: "Invalid withdrawal amount. Amount must be positive."
+                    details:
+                      field: "amount"
+                      issue: "invalid_amount"
         '422':
-          description: withdrawal amount exceeds available balance.
+          description: Withdrawal amount exceeds available balance.
           content:
             application/json:
               schema:
@@ -107,19 +137,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Transaction"
-        '400':
-          description: Invalid request or data error.
+        "400":
+          description: "Bad request due to invalid data."
           content:
             application/json:
+              schema:
+                $ref: "#/components/schemas/ModelApiResponse"
               examples:
-                invalidRequest:
+                invalidAmount:
+                  summary: Invalid deposit amount
                   value:
-                    error: "Invalid transfer amount"
-                    message: "The transfer amount must be greater than zero."
+                    code: "400"
+                    message: "Invalid withdrawal amount. Amount must be positive."
+                    details:
+                      field: "amount"
+                      issue: "invalid_amount"
+                insufficientFunds:
+                  summary: Insufficient balance in source account
+                  value:
+                    code: "400"
+                    message: "The source account does not have enough balance to complete the transfer."
         '404':
           description: One or both accounts not found.
           content:
             application/json:
+              schema:
+                $ref: "#/components/schemas/ModelApiResponse"
               examples:
                 sourceAccountNotFound:
                   value:
@@ -129,15 +172,6 @@ paths:
                   value:
                     error: "Destination account not found"
                     message: "The destination account number does not exist."
-        '422':
-          description: Unprocessable Entity (e.g., transfer amount exceeds available balance).
-          content:
-            application/json:
-              examples:
-                insufficientFunds:
-                  value:
-                    error: "Insufficient funds"
-                    message: "The source account does not have enough balance to complete the transfer."
 
   /transacciones/historial:
     get:
@@ -153,12 +187,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Transaction'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ModelApiResponse'
+
 components:
   schemas:
     Transaction:
